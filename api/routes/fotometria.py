@@ -6,6 +6,7 @@ from typing import Dict, Any
 
 from api.utils.preprocessing import preprocess_input, validate_input
 from api.services import fotometria_service
+from api.utils.feature_groups import FOTOMETRIA_FEATURES
 
 router = APIRouter(prefix="/fotometria", tags=["Fotometría"])
 
@@ -28,7 +29,7 @@ async def predict_fotometria(request: PredictionRequest):
     """
     try:
         # Validar entrada
-        is_valid, error_msg = validate_input(request.data)
+        is_valid, error_msg = validate_input(request.data,FOTOMETRIA_FEATURES)
         if not is_valid:
             raise HTTPException(status_code=400, detail=error_msg)
         

@@ -1,113 +1,60 @@
 # api/utils/preprocessing.py
 
-import pandas as pd
-import numpy as np
-import joblib
 import os
-from typing import Dict, Any
+import joblib
+import pandas as pd
+from pydantic import BaseModel
+from typing import List
 
-# Configuración de rutas
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-ARTIFACTS_PATH = os.path.join(BASE_DIR, "data", "processed", "artifacts")
+# --- CAMBIO CLAVE: Construcción de rutas robusta ---
+# 1. Obtener la ruta del directorio actual (api/utils)
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+# 2. Subir dos niveles para llegar a la raíz del proyecto (nasaSpace2025/)
+BASE_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))
+# 3. Construir la ruta a la carpeta donde se guardaron los artefactos
+ARTIFACTS_PATH = os.path.join(BASE_DIR, "data", "processed")
+# --- FIN DEL CAMBIO ---
 
-# Cargar artefactos de preprocesamiento
-IMPUTER = joblib.load(os.path.join(ARTIFACTS_PATH, "imputer.gz"))
-SCALER = joblib.load(os.path.join(ARTIFACTS_PATH, "scaler.gz"))
+# Cargar los artefactos de preprocesamiento una sola vez cuando el módulo se importa
+try:
+    IMPUTER = joblib.load(os.path.join(ARTIFACTS_PATH, "imputer.gz"))
+    SCALER = joblib.load(os.path.join(ARTIFACTS_PATH, "scaler.gz"))
+except FileNotFoundError as e:
+    print(f"❌ Error al cargar artefactos: {e}")
+    print("Asegúrate de haber ejecutado el script 'scripts/preprocess.py' primero.")
+    # Salir o manejar el error como prefieras si los archivos son cruciales para iniciar
+    raise e
 
-
-def generar_cols_incertidumbre(df: pd.DataFrame, cols: list) -> pd.DataFrame:
+def preprocess_input(input_data: pd.DataFrame, feature_columns: List[str]) -> pd.DataFrame:
     """
-    Genera columnas de incertidumbre promedio y máxima para las columnas especificadas.
+    Aplica el preprocesamiento (imputación y escalado) a los datos de entrada.
     
     Args:
-        df: DataFrame con los datos
-        cols: Lista de nombres de columnas base
-        
+        input_data: DataFrame con los datos crudos.
+        feature_columns: Lista de columnas a las que se aplicará el preprocesamiento.
+    
     Returns:
-        DataFrame con las columnas de incertidumbre añadidas
+        DataFrame con los datos procesados.
     """
-    for col in cols:
-        err1_col = f"{col}_err1"
-        err2_col = f"{col}_err2"
-        
-        if err1_col in df.columns and err2_col in df.columns:
-            df[f"{col}_incertidumbre_promedio"] = (
-                df[err1_col].abs() + df[err2_col].abs()
-            ) / 2
-            df[f"{col}_incertidumbre_maxima"] = df[[err1_col, err2_col]].abs().max(axis=1)
-            
-            # Eliminar las columnas de error originales
-            df = df.drop(columns=[err1_col, err2_col], errors="ignore")
+    # 1. Asegurar que solo se procesen las columnas esperadas
+    data_to_process = input_data[feature_columns]
     
-    return df
+    # 2. Aplicar imputación
+    imputed_data = IMPUTER.transform(data_to_process)
+    
+    # 3. Aplicar escalado
+    scaled_data = SCALER.transform(imputed_data)
+    
+    # 4. Convertir de vuelta a un DataFrame con los nombres de columna correctos
+    processed_df = pd.DataFrame(scaled_data, columns=feature_columns, index=data_to_process.index)
+    
+    return processed_df
 
-
-def preprocess_input(data: Dict[str, Any]) -> pd.DataFrame:
+def validate_input(input_data: BaseModel, expected_features: List[str]):
     """
-    Preprocesa los datos de entrada para predicción.
-    
-    Args:
-        data: Diccionario con los datos de entrada
-        
-    Returns:
-        DataFrame preprocesado listo para predicción
+    Valida que los datos de entrada contengan todas las características necesarias.
     """
-    # Convertir el diccionario a DataFrame
-    df = pd.DataFrame([data])
-    
-    # Columnas con incertidumbre
-    cols_con_incertidumbre = [
-        "koi_period",
-        "koi_time0bk",
-        "koi_duration",
-        "koi_depth",
-        "koi_ror",
-        "koi_srad",
-        "koi_steff",
-        "koi_slogg",
-        "koi_prad",
-        "koi_insol"
-    ]
-    
-    # Generar columnas de incertidumbre
-    df = generar_cols_incertidumbre(df, cols_con_incertidumbre)
-    
-    # Aplicar imputación
-    df_imputed = pd.DataFrame(
-        IMPUTER.transform(df),
-        columns=df.columns,
-        index=df.index
-    )
-    
-    # Aplicar escalado
-    df_scaled = pd.DataFrame(
-        SCALER.transform(df_imputed),
-        columns=df_imputed.columns,
-        index=df_imputed.index
-    )
-    
-    return df_scaled
-
-
-def validate_input(data: Dict[str, Any]) -> tuple[bool, str]:
-    """
-    Valida que los datos de entrada contengan los campos requeridos.
-    
-    Args:
-        data: Diccionario con los datos de entrada
-        
-    Returns:
-        Tupla (es_valido, mensaje_error)
-    """
-    required_fields = [
-        "koi_period", "koi_time0bk", "koi_duration", "koi_depth",
-        "koi_ror", "koi_srad", "koi_steff", "koi_slogg",
-        "koi_prad", "koi_insol"
-    ]
-    
-    missing_fields = [field for field in required_fields if field not in data]
-    
-    if missing_fields:
-        return False, f"Faltan campos requeridos: {', '.join(missing_fields)}"
-    
-    return True, ""
+    input_dict = input_data.dict()
+    missing_features = [feat for feat in expected_features if feat not in input_dict]
+    if missing_features:
+        raise ValueError(f"Faltan las siguientes características en la entrada: {missing_features}")
