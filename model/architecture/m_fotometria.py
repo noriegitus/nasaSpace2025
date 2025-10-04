@@ -21,7 +21,6 @@ class FotometriaNet(nn.Module):
             nn.Linear(16, 8),
             nn.ReLU(),
             nn.Linear(8, 1),
-            nn.Sigmoid() # Sigmoid para una salida de probabilidad (0 a 1)
         )
 
     def forward(self, x):
