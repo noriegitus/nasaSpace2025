@@ -16,12 +16,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 # Importamos la clase del modelo desde su nueva ubicación
-from model.m_fotometria import FotometriaNet
+from model.architecture.m_fotometria import FotometriaNet
 
 # --- Configuración de Rutas (ACTUALIZADO) ---
 PROCESSED_BASE_PATH = os.path.join(BASE_DIR, "data", "processed")
 TRAIN_PATH = os.path.join(PROCESSED_BASE_PATH, "train_set")
-MODEL_OUTPUT_PATH = os.path.join(BASE_DIR, "weights")
+MODEL_OUTPUT_PATH = os.path.join(BASE_DIR, "outputs", "weights")
 os.makedirs(MODEL_OUTPUT_PATH, exist_ok=True)
 
 # --- Carga de Datos Procesados desde las carpetas correctas ---

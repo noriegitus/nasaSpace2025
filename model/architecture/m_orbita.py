@@ -1,12 +1,11 @@
-# nasaSpace2025/model/model1.py
 
 import torch
 import torch.nn as nn
 
-class FotometriaNet(nn.Module):
+class OrtibalNet(nn.Module):
     """
-    Red Neuronal para analizar las características de fotometría de un tránsito.
-    Evalúa la calidad, forma y claridad de la señal.
+    Red Neuronal para analizar las características de periodicidad y regularidad de la órbita.
+    Su objetivo es confirmar que la señal se repite de manera estable y predecible.
     """
     def __init__(self, input_features):
         """
@@ -14,7 +13,7 @@ class FotometriaNet(nn.Module):
         Args:
             input_features (int): El número de columnas de entrada para esta red.
         """
-        super(FotometriaNet, self).__init__()
+        super(OrtibalNet, self).__init__()
         # Definimos la arquitectura
         self.network = nn.Sequential(
             nn.Linear(input_features, 16),
