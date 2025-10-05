@@ -1,0 +1,19 @@
+# Git files
+.git
+.gitignore
+
+# Python virtual environment
+.venv
+venv/
+nasa2025/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE and OS specific files
+.vscode/
+.idea/
+.DS_Store
