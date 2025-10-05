@@ -1,8 +1,19 @@
-# Python
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+*/**/__pycache__/
+**/*/__pycache__/
+model/architecture/__pycache__/
+api/**/__pycache__/
+scripts/__pycache__/
+
+# Python environment
 .Python
 build/
 develop-eggs/
@@ -47,6 +58,12 @@ env/
 # Environment variables
 .env
 .env.local
+
+# Logs
+*.log
+api/server.log
+api/test_*.log
+logs/
 
 # Logs
 *.log
