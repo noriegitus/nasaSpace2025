@@ -1,2 +1,7 @@
 docker build -t nasa-exoplanet-api .
 docker run -d -p 8000:8000 --name exoplanet-container nasa-exoplanet-api
+
+#Otros
+docker ps -a
+docker stop exoplanet-container
+docker start exoplanet-container
